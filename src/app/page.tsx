@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Легкие компоненты (статичный контент) импортируем обычно
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Philosophy from '@/components/Philosophy';
@@ -13,14 +12,9 @@ import Service from '@/components/Service';
 import Footer from '@/components/Footer';
 import ScrollToTop from '@/components/ScrollToTop';
 
-// Тяжелые компоненты подгружаем лениво (Dynamic Imports)
 const Showroom = dynamic(() => import('@/components/Showroom'), { 
   ssr: false,
   loading: () => <div className="h-[70vh] bg-black animate-pulse" /> 
-});
-
-const ARShowroom = dynamic(() => import('@/components/ARShowroom'), { 
-  ssr: false 
 });
 
 const Collections = dynamic(() => import('@/components/Collections'), {
@@ -68,9 +62,8 @@ export default function Home() {
       <section id="philosophy"><Philosophy /></section>
       <section id="workshop"><Workshop /></section>
       
+      {/* 360 & AR Unified Component */}
       <Showroom />
-      
-      <section id="ar"><ARShowroom /></section>
       
       <section id="collections">
         <Collections onDetailClick={openModal} />
