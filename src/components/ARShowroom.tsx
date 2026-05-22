@@ -1,23 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import Script from 'next/script';
 
 export default function ARShowroom() {
-  useEffect(() => {
-    import('@google/model-viewer').catch(console.error);
-  }, []);
-
-  const activateAR = () => {
-    const mv = document.querySelector('model-viewer') as HTMLElement & { activateAR: () => void };
-    if (mv && mv.activateAR) {
-      mv.activateAR();
-    } else {
-      alert('AR поддерживается только на мобильных устройствах с Android/iOS');
-    }
-  };
-
   return (
     <section id="ar" className="py-24 md:py-32 px-4 md:px-8 bg-[#0a0a0a]">
+      {/* 
+        Bulletproof CDN load for model-viewer. 
+        Bypasses any Next.js/Turbopack bundling issues with Three.js peer dependencies.
+      */}
+      <Script 
+        type="module" 
+        src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js" 
+      />
+
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
         
         <div className="w-full lg:w-1/2 space-y-8">
@@ -29,21 +25,18 @@ export default function ARShowroom() {
               Примерка в интерьере
             </h2>
           </div>
-          <p className="text-base text-gray-400 leading-relaxed max-w-md">
-            Используйте WebXR (дополненную реальность), чтобы увидеть масштаб и текстуру чабани на вашем столе до начала проектирования.
-          </p>
           
-          <div className="pt-4">
-            <button 
-              className="premium-button-outline"
-              onClick={activateAR}
-            >
-              Запустить AR-сессию
-            </button>
+          <div className="space-y-6 text-gray-400 leading-relaxed max-w-md text-sm md:text-base">
+            <p>
+              Используйте WebXR (дополненную реальность), чтобы увидеть масштаб и текстуру чабани на вашем столе до начала проектирования.
+            </p>
+            <p className="hidden md:block text-[rgb(var(--accent-wood))] border-l-2 border-[rgb(var(--accent-wood))] pl-4">
+              <strong>Для пользователей ПК:</strong> Отсканируйте эту страницу с вашего смартфона (iOS или Android), чтобы активировать функцию дополненной реальности.
+            </p>
+            <p className="md:hidden text-gray-300">
+              Нажмите кнопку <strong>«Запустить AR»</strong> на 3D-модели ниже, чтобы разместить объект в вашей комнате.
+            </p>
           </div>
-          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold mt-4">
-            * Доступно на устройствах iOS и Android
-          </p>
         </div>
 
         <div className="w-full lg:w-1/2 aspect-[4/3] lg:aspect-square relative bg-[#111] rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
@@ -52,6 +45,7 @@ export default function ARShowroom() {
               __html: `
                 <model-viewer
                   src="https://modelviewer.dev/shared-assets/models/Chair.glb"
+                  ios-src="https://modelviewer.dev/shared-assets/models/Chair.usdz"
                   ar
                   ar-modes="webxr scene-viewer quick-look"
                   camera-controls
@@ -60,6 +54,9 @@ export default function ARShowroom() {
                   auto-rotate
                   style="width: 100%; height: 100%; background-color: transparent;"
                 >
+                  <button slot="ar-button" style="position: absolute; bottom: 24px; right: 24px; background-color: #f5f5f5; color: #080808; border: none; border-radius: 4px; padding: 12px 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; font-size: 11px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: all 0.3s ease;">
+                    Запустить AR
+                  </button>
                   <div slot="poster" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600;">
                     Загрузка среды...
                   </div>
