@@ -12,10 +12,6 @@ import Service from '@/components/Service';
 import Footer from '@/components/Footer';
 import ScrollToTop from '@/components/ScrollToTop';
 
-const Collections = dynamic(() => import('@/components/Collections'), {
-  ssr: true
-});
-
 const FinalCTA = dynamic(() => import('@/components/FinalCTA'), {
   ssr: true
 });

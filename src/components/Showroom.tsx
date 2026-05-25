@@ -1,10 +1,27 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, RoundedBox } from '@react-three/drei';
-import { Suspense, useState, useEffect, useRef, memo } from 'react';
+import { OrbitControls, Environment, ContactShadows, RoundedBox, useTexture } from '@react-three/drei';
+import { Suspense, useState, useEffect, useRef, memo, useLayoutEffect } from 'react';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as THREE from 'three';
+
+// Define a type for model-viewer custom element
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        src: string;
+        ar?: boolean;
+        'ar-modes'?: string;
+        'camera-controls'?: boolean;
+        alt?: string;
+        'ios-src'?: string;
+      }, HTMLElement>;
+    }
+  }
+}
 
 interface ExporterProps {
   groupRef: React.RefObject<THREE.Group | null>;
@@ -49,11 +66,41 @@ function Exporter({ groupRef, setGlbUrl, activeModel }: ExporterProps) {
   return null;
 }
 
+// Textured Material Component with safe loading and detailed parameters
+const DetailedWoodMaterial = ({ url, color, roughness, repeat = [2, 2], clearcoat = 0.5 }: { url: string, color: string, roughness: number, repeat?: [number, number], clearcoat?: number }) => {
+  const texture = useTexture(url);
+  
+  useLayoutEffect(() => {
+    if (texture) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeat[0], repeat[1]);
+      texture.anisotropy = 16;
+    }
+  }, [texture, repeat]);
+
+  return (
+    <meshPhysicalMaterial 
+      map={texture}
+      color={color}
+      roughness={roughness}
+      metalness={0.05}
+      clearcoat={clearcoat}
+      clearcoatRoughness={0.1}
+      envMapIntensity={1.5}
+      reflectivity={0.5}
+    />
+  );
+};
+
 // 1. MONOLITH
 const MonolithModel = memo(() => (
   <group>
     <RoundedBox args={[7, 0.6, 4]} radius={0.08} smoothness={8} castShadow receiveShadow>
-      <meshPhysicalMaterial color="#3d231a" roughness={0.6} metalness={0.05} clearcoat={0.3} envMapIntensity={1.5} />
+      <DetailedWoodMaterial 
+        url="https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1200"
+        color="#3d231a"
+        roughness={0.6}
+      />
     </RoundedBox>
     <mesh position={[0, 0.09, 0]}>
       <boxGeometry args={[6.4, 0.38, 3.4]} />
@@ -63,7 +110,12 @@ const MonolithModel = memo(() => (
       {[...Array(10)].map((_, i) => (
         <mesh key={i} position={[(i - 4.5) * 0.62, 0.01, 0]} castShadow>
           <boxGeometry args={[0.25, 0.15, 3.4]} />
-          <meshPhysicalMaterial color="#4d2c1e" roughness={0.4} clearcoat={0.2} />
+          <DetailedWoodMaterial 
+            url="https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1200"
+            color="#4d2c1e"
+            roughness={0.4}
+            repeat={[0.5, 2]}
+          />
         </mesh>
       ))}
     </group>
@@ -90,7 +142,12 @@ const NexusModel = memo(() => (
          </mesh>
       ))}
       <RoundedBox args={[6.2, 0.1, 3.6]} radius={0.05} castShadow smoothness={4}>
-         <meshPhysicalMaterial color="#5c4033" roughness={0.4} clearcoat={0.5} />
+         <DetailedWoodMaterial 
+           url="https://images.unsplash.com/photo-1541459530419-723321557002?q=80&w=1200"
+           color="#5c4033"
+           roughness={0.4}
+           clearcoat={0.6}
+         />
       </RoundedBox>
       <group position={[0, 0.052, 0]}>
         {[...Array(4)].map((_, r) => [...Array(6)].map((_, c) => (
@@ -110,25 +167,39 @@ const EclipseModel = memo(() => (
   <group>
     <mesh castShadow receiveShadow>
       <boxGeometry args={[7.5, 0.8, 4.5]} />
-      <meshPhysicalMaterial color="#050505" roughness={0.15} clearcoat={1} clearcoatRoughness={0.05} reflectivity={1} envMapIntensity={2} />
+      <DetailedWoodMaterial 
+        url="https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=1200"
+        color="#050505"
+        roughness={0.2}
+        clearcoat={1}
+        repeat={[1.5, 1.5]}
+      />
     </mesh>
     <group position={[0, 0.36, 0]}>
-      <mesh receiveShadow rotation={[0, 0.2, 0]}><boxGeometry args={[5, 0.1, 1.2]} /><meshPhysicalMaterial color="#000" roughness={1} /></mesh>
+      <mesh receiveShadow rotation={[0, 0.2, 0]}>
+        <boxGeometry args={[5, 0.1, 1.2]} />
+        <meshPhysicalMaterial color="#000" roughness={1} />
+      </mesh>
       <mesh position={[0, -0.02, 0]} rotation={[0, 0.2, 0]}>
         <boxGeometry args={[4.8, 0.05, 0.8]} />
         <meshPhysicalMaterial color="#d4af37" metalness={1} roughness={0.1} emissive="#d4af37" emissiveIntensity={0.5} />
       </mesh>
       {[...Array(6)].map((_, i) => (
         <mesh key={i} position={[(i - 2.5) * 0.7, 0.06, i * 0.1]} rotation={[0, 0.2, 0]} castShadow>
-          <boxGeometry args={[0.04, 0.04, 1.4]} /><meshStandardMaterial color="#ffffff" metalness={1} />
+          <boxGeometry args={[0.04, 0.04, 1.4]} />
+          <meshStandardMaterial color="#ffffff" metalness={1} />
         </mesh>
       ))}
     </group>
     <mesh position={[2.5, 0.41, 1.5]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.1, 32]} /><meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={10} />
+      <circleGeometry args={[0.1, 32]} />
+      <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={10} />
     </mesh>
     {[[-3.4, 1.9], [3.4, 1.9], [-3.4, -1.9], [3.4, -1.9]].map(([x, z], i) => (
-      <mesh key={i} position={[x, -0.45, z]}><cylinderGeometry args={[0.08, 0.12, 0.2, 16]} /><meshStandardMaterial color="#71717a" metalness={1} /></mesh>
+      <mesh key={i} position={[x, -0.45, z]}>
+         <cylinderGeometry args={[0.08, 0.12, 0.2, 16]} />
+         <meshStandardMaterial color="#71717a" metalness={1} />
+      </mesh>
     ))}
   </group>
 ));
@@ -196,7 +267,7 @@ export default function Showroom({ activeModel = 'monolith' }: { activeModel?: '
   return (
     <section ref={containerRef} id="showroom" className="h-full w-full bg-transparent relative overflow-hidden flex flex-col items-center justify-center">
       <div style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}>
-        {/* @ts-ignore */}
+        {/* @ts-expect-error - model-viewer */}
         <model-viewer id="ar-viewer" src={glbUrl || ''} ar ar-modes="webxr scene-viewer quick-look" />
       </div>
       <div className="w-full h-full cursor-grab active:cursor-grabbing touch-none">
@@ -212,7 +283,13 @@ export default function Showroom({ activeModel = 'monolith' }: { activeModel?: '
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 21v-4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v4"/><path d="M21 10.368a2 2 0 0 0-1.04-.9l-7-3.32a2 2 0 0 0-1.92 0l-7 3.32A2 2 0 0 0 3 10.368V21"/><path d="M3 10.368 12 15l9-4.632"/><path d="M12 15v6"/></svg>
               <span>{isExporting ? 'AR...' : 'Примерить в AR'}</span>
             </button>
-            <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ position: [0, 4, 7.5], fov: 34 }} onPointerDown={(e) => (e.target as HTMLElement).setPointerCapture(1)}>
+            <Canvas 
+              shadows 
+              dpr={[1, 1.5]} 
+              gl={{ antialias: true, powerPreference: "high-performance" }}
+              camera={{ position: [0, 4, 7.5], fov: 34 }} 
+              onPointerDown={(e) => (e.target as HTMLElement).setPointerCapture(1)}
+            >
               <SceneLighting />
               <group ref={modelGroupRef} key={activeModel}>
                 {activeModel === 'monolith' && <MonolithModel />}

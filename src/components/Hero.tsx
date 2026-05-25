@@ -55,7 +55,7 @@ export default function Hero({ onOrderClick, activeModel, onModelChange }: HeroP
           </h1>
           <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
+            animate={{ opacity: 0.2 }}
             transition={{ delay: 1, duration: 1 }}
             className="text-[9px] uppercase tracking-[0.8em] text-white"
           >
@@ -71,7 +71,7 @@ export default function Hero({ onOrderClick, activeModel, onModelChange }: HeroP
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 flex flex-col md:flex-row justify-between items-center md:items-end gap-10 md:gap-8">
           
           {/* Main Actions */}
-          <div className="flex flex-col sm:flex-row items-center gap-10 md:gap-12 pointer-events-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-10 md:gap-16 pointer-events-auto">
             <div className="flex flex-col gap-2 items-center sm:items-start group">
                <span className="text-[7px] text-gray-600 uppercase tracking-[0.4em] font-mono group-hover:text-[rgb(var(--accent-wood))] transition-colors">Action_Request</span>
                <button 
@@ -152,6 +152,16 @@ export default function Hero({ onOrderClick, activeModel, onModelChange }: HeroP
           </div>
         </div>
       </div>
+
+      {/* Scroll Indicator */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4 opacity-30"
+      >
+        <div className="w-[1px] h-12 bg-white/20" />
+      </motion.div>
     </section>
   );
 }
