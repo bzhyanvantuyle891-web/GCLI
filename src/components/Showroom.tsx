@@ -67,22 +67,9 @@ function Exporter({ groupRef, setGlbUrl, activeModel }: ExporterProps) {
 }
 
 // Textured Material Component with safe loading and detailed parameters
-const DetailedWoodMaterial = ({ url, color, roughness, repeat = [2, 2], clearcoat = 0.5 }: { url: string, color: string, roughness: number, repeat?: [number, number], clearcoat?: number }) => {
-  const baseTexture = useTexture(url);
-  const texture = baseTexture.clone();
-  
-  useLayoutEffect(() => {
-    if (texture) {
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(repeat[0], repeat[1]);
-      texture.anisotropy = 16;
-      texture.needsUpdate = true;
-    }
-  }, [texture, repeat]);
-
+const DetailedWoodMaterial = ({ color, roughness, clearcoat = 0.5 }: { color: string, roughness: number, clearcoat?: number }) => {
   return (
     <meshPhysicalMaterial 
-      map={texture}
       color={color}
       roughness={roughness}
       metalness={0.05}
@@ -99,7 +86,6 @@ const MonolithModel = memo(() => (
   <group>
     <RoundedBox args={[7, 0.6, 4]} radius={0.08} smoothness={8} castShadow receiveShadow>
       <DetailedWoodMaterial 
-        url="https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1200"
         color="#3d231a"
         roughness={0.6}
       />
@@ -113,10 +99,8 @@ const MonolithModel = memo(() => (
         <mesh key={i} position={[(i - 4.5) * 0.62, 0.01, 0]} castShadow>
           <boxGeometry args={[0.25, 0.15, 3.4]} />
           <DetailedWoodMaterial 
-            url="https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1200"
             color="#4d2c1e"
             roughness={0.4}
-            repeat={[0.5, 2]}
           />
         </mesh>
       ))}
@@ -145,7 +129,6 @@ const NexusModel = memo(() => (
       ))}
       <RoundedBox args={[6.2, 0.1, 3.6]} radius={0.05} castShadow smoothness={4}>
          <DetailedWoodMaterial 
-           url="https://images.unsplash.com/photo-1541459530419-723321557002?q=80&w=1200"
            color="#5c4033"
            roughness={0.4}
            clearcoat={0.6}
@@ -170,11 +153,9 @@ const EclipseModel = memo(() => (
     <mesh castShadow receiveShadow>
       <boxGeometry args={[7.5, 0.8, 4.5]} />
       <DetailedWoodMaterial 
-        url="https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?q=80&w=1200"
         color="#050505"
         roughness={0.2}
         clearcoat={1}
-        repeat={[1.5, 1.5]}
       />
     </mesh>
     <group position={[0, 0.36, 0]}>
