@@ -3,7 +3,6 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, RoundedBox, useTexture } from '@react-three/drei';
 import { Suspense, useState, useEffect, useRef, memo, useLayoutEffect } from 'react';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as THREE from 'three';
 
 // Define a type for model-viewer custom element
@@ -34,9 +33,10 @@ function Exporter({ groupRef, setGlbUrl, activeModel }: ExporterProps) {
     if (!groupRef.current) return;
     
     let isMounted = true;
-    const exportModel = () => {
+    const exportModel = async () => {
       if (!isMounted || !groupRef.current) return;
       try {
+        const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter.js');
         const exporter = new GLTFExporter();
         exporter.parse(
           groupRef.current,
