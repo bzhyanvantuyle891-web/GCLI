@@ -5,65 +5,24 @@ import { OrbitControls, Environment, ContactShadows, RoundedBox } from '@react-t
 import { Suspense, useState, useEffect, useRef, memo } from 'react';
 import * as THREE from 'three';
 
-// Define a type for model-viewer custom element
+// Define a proper interface for the custom element
+interface ModelViewerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+  src: string;
+  ar?: boolean;
+  'ar-modes'?: string;
+  'camera-controls'?: boolean;
+  alt?: string;
+  id?: string;
+  'ios-src'?: string;
+}
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        src: string;
-        ar?: boolean;
-        'ar-modes'?: string;
-        'camera-controls'?: boolean;
-        alt?: string;
-        'ios-src'?: string;
-      }, HTMLElement>;
+      'model-viewer': ModelViewerProps;
     }
   }
-}
-
-interface ExporterProps {
-  groupRef: React.RefObject<THREE.Group | null>;
-  setGlbUrl: (url: string) => void;
-  activeModel: string;
-}
-
-function Exporter({ groupRef, setGlbUrl, activeModel }: ExporterProps) {
-  useEffect(() => {
-    if (!groupRef.current) return;
-    
-    let isMounted = true;
-    const exportModel = async () => {
-      if (!isMounted || !groupRef.current) return;
-      try {
-        const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter.js');
-        const exporter = new GLTFExporter();
-        exporter.parse(
-          groupRef.current,
-          (gltf) => {
-            if (!isMounted) return;
-            const blob = new Blob([gltf as ArrayBuffer], { type: 'model/gltf-binary' });
-            const url = URL.createObjectURL(blob);
-            setGlbUrl(url);
-          },
-          (error) => {
-            console.error('GLTF Export Error:', error);
-          },
-          { binary: true }
-        );
-      } catch (err) {
-        console.error('Exporter failed:', err);
-      }
-    };
-
-    const timeout = setTimeout(exportModel, 1500);
-    return () => {
-      isMounted = false;
-      clearTimeout(timeout);
-    };
-  }, [groupRef, setGlbUrl, activeModel]);
-
-  return null;
 }
 
 // Textured Material Component with safe loading and detailed parameters
@@ -201,12 +160,26 @@ function SceneLighting() {
   );
 }
 
+// Статические пути к AR моделям, которые будут загружены в папку public/models/
+const AR_ASSETS = {
+  monolith: {
+    glb: '/models/monolith.glb',
+    usdz: '/models/monolith.usdz'
+  },
+  nature: {
+    glb: '/models/nexus.glb',
+    usdz: '/models/nexus.usdz'
+  },
+  dark: {
+    glb: '/models/eclipse.glb',
+    usdz: '/models/eclipse.usdz'
+  }
+};
+
 export default function Showroom({ activeModel = 'monolith' }: { activeModel?: 'monolith' | 'nature' | 'dark' }) {
   const [isInView, setIsInView] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
   const modelGroupRef = useRef<THREE.Group>(null);
-  const [glbUrl, setGlbUrl] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !document.querySelector('script[src*="model-viewer"]')) {
@@ -220,51 +193,39 @@ export default function Showroom({ activeModel = 'monolith' }: { activeModel?: '
     return () => observer.disconnect();
   }, []);
 
-  const prevModelRef = useRef(activeModel);
-  useEffect(() => {
-    if (prevModelRef.current !== activeModel) {
-      if (glbUrl) URL.revokeObjectURL(glbUrl);
-      setGlbUrl(null);
-      setIsExporting(true);
-      prevModelRef.current = activeModel;
-    }
-  }, [activeModel, glbUrl]);
-
-  const handleGlbReady = (url: string) => {
-    setGlbUrl(url);
-    setIsExporting(false);
-  };
-
   const activateAR = () => {
-    if (!glbUrl) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mv = document.getElementById('ar-viewer') as any;
     if (mv?.activateAR) {
       mv.activateAR();
     } else {
-      const link = document.createElement('a');
-      link.rel = 'ar'; link.href = glbUrl; link.click();
+      alert('AR режим недоступен. Для просмотра требуется устройство с поддержкой WebXR (Safari на iOS или Chrome на Android).');
     }
   };
+
+  const activeAssets = AR_ASSETS[activeModel];
 
   return (
     <section ref={containerRef} id="showroom" className="h-full w-full bg-transparent relative overflow-hidden flex flex-col items-center justify-center">
       <div style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}>
-        {/* @ts-expect-error - model-viewer */}
-        <model-viewer id="ar-viewer" src={glbUrl || ''} ar ar-modes="webxr scene-viewer quick-look" />
+        {/* @ts-expect-error - model-viewer is a custom element */}
+        <model-viewer 
+          id="ar-viewer" 
+          src={activeAssets.glb} 
+          ios-src={activeAssets.usdz}
+          ar 
+          ar-modes="webxr scene-viewer quick-look" 
+        />
       </div>
       <div className="w-full h-full cursor-grab active:cursor-grabbing touch-none">
         {isInView && (
           <Suspense fallback={null}>
             <button 
               onClick={activateAR}
-              disabled={isExporting}
-              className={`absolute bottom-8 right-6 md:right-12 px-5 py-3 rounded-full font-bold text-[9px] uppercase tracking-widest z-50 transition-all flex items-center gap-2 ${
-                isExporting ? 'bg-white/10 text-white/30 cursor-wait' : 'bg-white text-black border-none shadow-xl hover:scale-105 active:scale-95'
-              }`}
+              className="absolute bottom-8 right-6 md:right-12 px-5 py-3 rounded-full font-bold text-[9px] uppercase tracking-widest z-50 transition-all flex items-center gap-2 bg-white text-black border-none shadow-xl hover:scale-105 active:scale-95"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 21v-4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v4"/><path d="M21 10.368a2 2 0 0 0-1.04-.9l-7-3.32a2 2 0 0 0-1.92 0l-7 3.32A2 2 0 0 0 3 10.368V21"/><path d="M3 10.368 12 15l9-4.632"/><path d="M12 15v6"/></svg>
-              <span>{isExporting ? 'AR...' : 'Примерить в AR'}</span>
+              <span>Примерить в AR</span>
             </button>
             <Canvas 
               shadows 
@@ -279,7 +240,6 @@ export default function Showroom({ activeModel = 'monolith' }: { activeModel?: '
                 {activeModel === 'nature' && <NexusModel />}
                 {activeModel === 'dark' && <EclipseModel />}
               </group>
-              <Exporter groupRef={modelGroupRef} setGlbUrl={handleGlbReady} activeModel={activeModel} />
               <ContactShadows position={[0, -0.45, 0]} opacity={0.4} scale={15} blur={2.5} far={4} color="#000000" resolution={256} />
               <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.3} enableDamping dampingFactor={0.05} minPolarAngle={0} maxPolarAngle={Math.PI} />
             </Canvas>
